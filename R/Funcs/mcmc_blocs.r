@@ -10,10 +10,12 @@ s2_blocs <- rep(0, C)
 z <- sample(1:C, dim(Y)[1], replace = TRUE)  # Random bloc assignments
 
 if (!rstart) {
+  S <- list()
+  
   for (c in 1:C) {
     bloc_indices <- which(z == c)
     X_c <- X[bloc_indices, bloc_indices, , , drop = FALSE]
-    Y_c <- Y[bloc_indices, bloc_indices, , , drop = FALSE]
+    Y_c <- Y[bloc_indices, , , , drop = FALSE]
     B_blocs[[c]]<-BMLE<-mlm.ALS(Y_c,X_c,imax=5,verbose=TRUE) 
     YI<-Y_c ; YI[is.na(Y_c)]<-tprod(X_c,B_blocs[[c]])[is.na(Y_c)]
     R<-YI-tprod(X_c,B_blocs[[c]])
@@ -84,8 +86,8 @@ for (s in 1:(NS + NB)) {
   for (c in 1:C) {
     bloc_indices <- which(z == c)
     if (length(bloc_indices) > 0) {
-      X_c <- X[which(z == c), which(z == c), , , drop = FALSE]
-      Y_c <- Y[which(z == c), which(z == c), , , drop = FALSE]
+      X_c <- X[bloc_indices, , , , drop = FALSE]
+      Y_c <- Y[bloc_indices, , , , drop = FALSE]
       B_c <- mlm.ALS(Y_c,X_c,imax=5,verbose=TRUE)
       BS <- rBSa_fc(Y_c, X_c, B_c, S_blocs[[c]])
       B_blocs[[c]] <- BS$B
@@ -98,10 +100,10 @@ for (s in 1:(NS + NB)) {
   for (c in 1:C) {
     bloc_indices <- which(z == c)
     if (length(bloc_indices) > 0) {
-      XB_bloc <- tprod(X[bloc_indices, bloc_indices, , , drop = FALSE], B_blocs[[c]])
-      Y[block_indices, block_indices, , , drop = FALSE][is.na(Y[block_indices, block_indices, , , drop = FALSE])] <- 
-        (XB_bloc + sqrt(s2_blocs[c]) * tprod(rsan(dim(Y)[bloc_indices, bloc_indices, , drop = FALSE]), 
-                                             lapply(S_blocs[[c]], mhalf)))[is.na(Y[block_indices, block_indices, , , drop = FALSE])]
+      XB_bloc <- tprod(X[bloc_indices, , , , drop = FALSE], B_blocs[[c]])
+      Y[block_indices, , , , drop = FALSE][is.na(Y[block_indices, , , , drop = FALSE])] <- 
+        (XB_bloc + sqrt(s2_blocs[c]) * tprod(rsan(dim(Y)[bloc_indices, , , drop = FALSE]), 
+                                             lapply(S_blocs[[c]], mhalf)))[is.na(Y[block_indices, , , , drop = FALSE])]
     }
   }
   
@@ -109,7 +111,7 @@ for (s in 1:(NS + NB)) {
   for (c in 1:C) {
     if (length(which(z == c)) > 0) {
       XB_bloc <- tprod(X[which(z == c), , , drop = FALSE], B_blocs[[c]])
-      mse_c <- mean((YI[which(z == c), which(z == c), , , drop = FALSE] - XB_bloc)^2)
+      mse_c <- mean((YI[which(z == c), , , , drop = FALSE] - XB_bloc)^2)
       MSE[[c]] <- c(MSE[[c]], mse_c)
       cat(MSE[[c]][length(MSE[[c]])])
     }
